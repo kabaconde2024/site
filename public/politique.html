@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Actualités politiques en français - kabaconde.com">
+  <title>Mes Actualités - Politique</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="font-roboto bg-gray-100 text-gray-800">
+  <header class="bg-blue-900 text-white py-4 shadow-lg">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <div class="text-xl font-bold">
+        <a href="index.html" class="hover:text-blue-300">kabaconde.com</a>
+      </div>
+      <nav class="flex items-center space-x-8">
+        <a href="index.html" class="text-2xl hover:text-blue-300 transition">Accueil</a>
+        <a href="politique.html" class="text-2xl hover:text-blue-300 transition">Politique</a>
+        <a href="sport.html" class="text-2xl hover:text-blue-300 transition">Sport</a>
+        <a href="technologie.html" class="text-2xl hover:text-blue-300 transition">Technologie</a>
+        <a href="apropos.html" class="text-2xl hover:text-blue-300 transition">À propos</a>
+        <a href="contact.html" class="text-2xl hover:text-blue-300 transition">Contact</a>
+        <input type="text" id="search" placeholder="Rechercher..." class="text-lg px-4 py-2 rounded-lg bg-white text-gray-800 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </nav>
+    </div>
+  </header>
+  <main class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-6 text-center">Actualités Politiques</h2>
+    <div id="articles" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Les articles seront insérés ici par JavaScript -->
+    </div>
+  </main>
+  <footer class="bg-blue-900 text-white text-center py-4">
+    <p>© 2025 Mes Actualités. Tous droits réservés.</p>
+  </footer>
+  <script>
+    // Fonction pour afficher les articles
+    function displayArticles(filteredArticles) {
+      const articlesContainer = document.getElementById('articles');
+      articlesContainer.innerHTML = ''; // Vider le conteneur
+      filteredArticles.forEach(article => {
+        const articleElement = document.createElement('div');
+        articleElement.className = 'article bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition';
+        articleElement.innerHTML = `
+          <img src="${article.image}" alt="${article.title}" class="w-full h-48 object-cover rounded-lg mb-4">
+          <h3 class="text-xl font-semibold mb-2">${article.title}</h3>
+          <p class="text-gray-600 mb-4">${article.summary}</p>
+          <p class="text-sm text-gray-500">Publié le ${article.date} | Catégorie: ${article.category}</p>
+        `;
+        articlesContainer.appendChild(articleElement);
+      });
+    }
+
+    // Charger les articles depuis le backend
+    fetch('http://localhost:3000/articles')
+      .then(response => response.json())
+      .then(articles => {
+        const filteredArticles = articles.filter(article => article.category === 'politique');
+        displayArticles(filteredArticles);
+        // Filtrer les articles en fonction de la recherche
+        document.getElementById('search').addEventListener('input', (e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          const filteredArticles = articles.filter(article =>
+            article.category === 'politique' &&
+            (article.title.toLowerCase().includes(searchTerm) ||
+             article.summary.toLowerCase().includes(searchTerm))
+          );
+          displayArticles(filteredArticles);
+        });
+      })
+      .catch(error => {
+        console.error('Erreur lors du chargement des articles:', error);
+        document.getElementById('articles').innerHTML = '<p class="text-center text-red-600">Erreur lors du chargement des articles.</p>';
+      });
+  </script>
+</body>
+</html>

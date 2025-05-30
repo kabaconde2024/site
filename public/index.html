@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Site d'actualités en français - kabaconde.com">
+  <title>Mes Actualités</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .article-card {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .article-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    #article-detail {
+      display: none; /* Caché par défaut */
+    }
+  </style>
+</head>
+<body class="font-roboto bg-gray-50">
+  <header class="bg-blue-900 text-white shadow-md">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold">
+        <a href="index.html" class="hover:text-blue-200">kabaconde.com</a>
+      </h1>
+      <nav class="hidden md:flex space-x-6">
+        <a href="index.html" class="text-lg hover:text-blue-200">Accueil</a>
+        <a href="politique.html" class="text-lg hover:text-blue-200">Politique</a>
+        <a href="sport.html" class="text-lg hover:text-blue-200">Sport</a>
+        <a href="technologie.html" class="text-lg hover:text-blue-200">Technologie</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-8">
+    <!-- Liste des articles -->
+    <section id="articles-list" class="mb-12">
+      <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Dernières Actualités</h2>
+      <div id="articles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Articles chargés dynamiquement -->
+      </div>
+    </section>
+
+    <!-- Détail de l'article sélectionné -->
+    <section id="article-detail" class="bg-white rounded-lg shadow-xl p-6 mt-8">
+      <div class="flex flex-col md:flex-row gap-8">
+        <div class="md:w-1/2">
+          <img id="detail-image" src="" alt="" class="w-full h-auto rounded-lg shadow-md">
+        </div>
+        <div class="md:w-1/2">
+          <h2 id="detail-title" class="text-2xl font-bold mb-4 text-gray-800"></h2>
+          <p id="detail-date" class="text-gray-500 mb-4"></p>
+          <p id="detail-summary" class="text-gray-700 text-lg leading-relaxed"></p>
+          <button onclick="hideArticleDetail()" class="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+            Retour à la liste
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-blue-900 text-white py-6">
+    <div class="container mx-auto px-4 text-center">
+      <p>© 2025 kabaconde.com - Tous droits réservés</p>
+    </div>
+  </footer>
+
+  <script>
+    // Variables globales
+    let allArticles = [];
+    let currentArticle = null;
+
+    // Charger les articles
+    async function loadArticles() {
+      try {
+        // Remplacez cette URL par votre véritable endpoint
+        const response = await fetch('http://localhost:3000/articles');
+        allArticles = await response.json();
+        displayArticlesList(allArticles);
+      } catch (error) {
+        console.error("Erreur de chargement des articles:", error);
+        document.getElementById('articles-container').innerHTML = `
+          <p class="text-center text-red-500 col-span-3">
+            Erreur de chargement des articles. Veuillez réessayer plus tard.
+          </p>
+        `;
+      }
+    }
+
+    // Afficher la liste des articles
+    function displayArticlesList(articles) {
+      const container = document.getElementById('articles-container');
+      container.innerHTML = '';
+
+      articles.forEach(article => {
+        const articleEl = document.createElement('div');
+        articleEl.className = 'article-card bg-white rounded-lg shadow-md overflow-hidden';
+        articleEl.innerHTML = `
+          <img src="${article.image}" alt="${article.title}" class="w-full h-48 object-cover">
+          <div class="p-4">
+            <h3 class="text-xl font-semibold mb-2 text-gray-800">${article.title}</h3>
+            <p class="text-sm text-gray-500">${article.date} • ${article.category}</p>
+          </div>
+        `;
+        articleEl.addEventListener('click', () => showArticleDetail(article));
+        container.appendChild(articleEl);
+      });
+    }
+
+    // Afficher le détail d'un article
+    function showArticleDetail(article) {
+      currentArticle = article;
+      
+      // Mettre à jour les éléments du détail
+      document.getElementById('detail-image').src = article.image;
+      document.getElementById('detail-image').alt = article.title;
+      document.getElementById('detail-title').textContent = article.title;
+      document.getElementById('detail-date').textContent = `Publié le ${article.date} | Catégorie: ${article.category}`;
+      document.getElementById('detail-summary').textContent = article.summary;
+      
+      // Masquer la liste et afficher le détail
+      document.getElementById('articles-list').style.display = 'none';
+      document.getElementById('article-detail').style.display = 'block';
+      
+      // Faire défiler jusqu'au détail
+      document.getElementById('article-detail').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Cacher le détail et revenir à la liste
+    function hideArticleDetail() {
+      document.getElementById('articles-list').style.display = 'block';
+      document.getElementById('article-detail').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Initialisation au chargement de la page
+    document.addEventListener('DOMContentLoaded', () => {
+      loadArticles();
+      
+      // Masquer la section détail au départ
+      document.getElementById('article-detail').style.display = 'none';
+    });
+  </script>
+</body>
+</html>

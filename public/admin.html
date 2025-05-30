@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Administration de Mes Actualités - kabaconde.com">
+  <title>Mes Actualités - Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="font-roboto bg-gray-100 text-gray-800">
+  <header class="bg-blue-900 text-white py-4 shadow-lg">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <div class="text-xl font-bold">
+        <a href="index.html" class="hover:text-blue-300">kabaconde.com</a>
+      </div>
+      <nav class="flex items-center space-x-8">
+        <a href="index.html" class="text-2xl hover:text-blue-300 transition">Accueil</a>
+        <a href="politique.html" class="text-2xl hover:text-blue-300 transition">Politique</a>
+        <a href="sport.html" class="text-2xl hover:text-blue-300 transition">Sport</a>
+        <a href="technologie.html" class="text-2xl hover:text-blue-300 transition">Technologie</a>
+        <a href="apropos.html" class="text-2xl hover:text-blue-300 transition">À propos</a>
+        <a href="contact.html" class="text-2xl hover:text-blue-300 transition">Contact</a>
+        <button onclick="logout()" class="text-lg bg-blue-700 px-4 py-2 rounded-lg hover:bg-blue-600 transition">Déconnexion</button>
+      </nav>
+    </div>
+  </header>
+  <main class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-6 text-center">Ajouter un nouvel article</h2>
+    <div class="max-w-lg mx-auto">
+      <p class="mb-4 text-gray-600">Utilisez ce formulaire pour ajouter un nouvel article.</p>
+      <input type="text" id="title" placeholder="Titre de l'article" class="w-full mb-4 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <textarea id="summary" placeholder="Résumé de l'article" rows="5" class="w-full mb-4 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+      <input type="date" id="date" class="w-full mb-4 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <select id="category" class="w-full mb-4 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="politique">Politique</option>
+        <option value="sport">Sport</option>
+        <option value="technologie">Technologie</option>
+      </select>
+      <input type="file" id="image" accept="image/jpeg,image/png,image/gif" class="w-full mb-4 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button onclick="addArticle()" class="w-full bg-blue-700 text-white py-2 rounded-lg hover:bg-blue-600 transition">Publier</button>
+      <p id="message" class="mt-4 text-center"></p>
+    </div>
+  </main>
+  <footer class="bg-blue-900 text-white text-center py-4">
+    <p>© 2025 Mes Actualités. Tous droits réservés.</p>
+  </footer>
+  <script>
+    // Vérifier l'authentification
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+    } else {
+      fetch('http://localhost:3000/verify-token', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (!data.valid) {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+          }
+        })
+        .catch(error => {
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+        });
+    }
+
+    function addArticle() {
+      const title = document.getElementById('title').value;
+      const summary = document.getElementById('summary').value;
+      const date = document.getElementById('date').value;
+      const category = document.getElementById('category').value;
+      const image = document.getElementById('image').files[0];
+      if (!title || !summary || !date || !category || !image) {
+        document.getElementById('message').innerText = 'Veuillez remplir tous les champs.';
+        return;
+      }
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('summary', summary);
+      formData.append('date', date);
+      formData.append('category', category);
+      formData.append('image', image);
+      fetch('http://localhost:3000/articles', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('message').innerText = 'Article ajouté avec succès !';
+          document.getElementById('title').value = '';
+          document.getElementById('summary').value = '';
+          document.getElementById('date').value = '';
+          document.getElementById('category').value = 'politique';
+          document.getElementById('image').value = '';
+        })
+        .catch(error => {
+          document.getElementById('message').innerText = 'Erreur lors de l\'ajout de l\'article.';
+          console.error(error);
+        });
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

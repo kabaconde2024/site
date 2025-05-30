@@ -1,0 +1,30 @@
+[
+  {
+    "title": "La diaspora guinéenne soutient la candidature de Mamadi Doumbouya",
+    "summary": "À Bruxelles, la diaspora guinéenne s’est mobilisée pour encourager Mamadi Doumbouya à se présenter à l’élection présidentielle, soulignant son rôle dans la transition politique du pays.",
+    "date": "2025-05-29",
+    "category": "politique",
+    "image": "/images/doumbouya.jpg"
+  },
+  {
+    "title": "Cristiano Ronaldo alimente les spéculations sur un départ d’Al-Nassr",
+    "summary": "Cristiano Ronaldo a semé le doute sur son avenir avec Al-Nassr après un message cryptique sur les réseaux sociaux, laissant entendre un possible transfert pour la Coupe du Monde des Clubs 2025.",
+    "date": "2025-05-24",
+    "category": "sport",
+    "image": "/images/ronaldo.jpg"
+  },
+  {
+    "title": "Une IA révolutionnaire dévoilée par xAI",
+    "summary": "xAI a présenté une intelligence artificielle capable d’accélérer la recherche scientifique, marquant une avancée majeure dans l’automatisation des découvertes.",
+    "date": "2025-05-27",
+    "category": "technologie",
+    "image": "/images/tech_innovation.jpg"
+  },
+  {
+    "title": "Record mondial battu au 100 mètres",
+    "summary": "Un athlète a pulvérisé le record du monde du 100 mètres lors des championnats internationaux, suscitant l’admiration des fans.",
+    "date": "2025-05-26",
+    "category": "sport",
+    "image": "/images/athlete_sprint.jpg"
+  }
+]
