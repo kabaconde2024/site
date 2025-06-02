@@ -11,14 +11,28 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Fichiers de données avec chemins absolus
-const articlesFile = path.join(__dirname, 'articles.json');
-const usersFile = path.join(__dirname, 'users.json');
+// Chemins absolus des fichiers
+const dataDir = path.join(__dirname, 'data');
+const articlesFile = path.join(dataDir, 'articles.json');
+const usersFile = path.join(dataDir, 'users.json');
 
-// Configuration de multer pour le téléchargement d'images
+// Créer le répertoire data s'il n'existe pas
+async function ensureDataDir() {
+  try {
+    await fs.mkdir(dataDir, { recursive: true });
+    console.log(`Répertoire data créé à: ${dataDir}`);
+  } catch (err) {
+    console.error('Erreur création répertoire data:', err);
+  }
+}
+
+// Configuration multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'public', 'images'));
+    const uploadDir = path.join(__dirname, 'public', 'images');
+    fs.mkdir(uploadDir, { recursive: true })
+      .then(() => cb(null, uploadDir))
+      .catch(err => cb(err));
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -32,95 +46,108 @@ const upload = multer({
     if (/\.(jpg|jpeg|png|gif)$/i.test(file.originalname)) {
       cb(null, true);
     } else {
-      cb(new Error('Seuls les fichiers .jpg, .jpeg, .png et .gif sont autorisés'));
+      cb(new Error('Seuls les fichiers image sont autorisés'));
     }
   }
 });
 
-// Initialiser les fichiers JSON
+// Initialisation des fichiers
 async function initFiles() {
+  await ensureDataDir();
+  
   try {
     await fs.access(articlesFile);
-    console.log('articles.json existe');
+    console.log('Fichier articles.json existe');
   } catch {
     console.log('Création de articles.json');
-    await fs.writeFile(articlesFile, JSON.stringify([]));
+    await fs.writeFile(articlesFile, JSON.stringify([], null, 2));
   }
+  
   try {
     await fs.access(usersFile);
-    console.log('users.json existe');
+    console.log('Fichier users.json existe');
   } catch {
     console.log('Création de users.json');
-    const defaultUser = [{
-      username: 'admin',
-      password: 'admin123'
-    }];
-    await fs.writeFile(usersFile, JSON.stringify(defaultUser));
+    await fs.writeFile(usersFile, JSON.stringify([
+      { username: 'admin', password: 'admin123' }
+    ], null, 2));
   }
 }
 
-initFiles().catch(err => {
-  console.error('Erreur lors de l\'initialisation:', err);
-});
-
-// Middleware d'authentification basique
-function authenticate(req, res, next) {
-  const { username, password } = req.body;
-  
-  fs.readFile(usersFile, 'utf8')
-    .then(data => {
-      const users = JSON.parse(data);
-      const user = users.find(u => u.username === username && u.password === password);
-      if (!user) {
-        return res.status(401).json({ error: 'Nom d\'utilisateur ou mot de passe incorrect' });
-      }
-      next();
-    })
-    .catch(err => {
-      res.status(500).json({ error: 'Erreur serveur' });
-    });
+// Middleware d'authentification
+async function authenticate(req, res, next) {
+  try {
+    const { username, password } = req.body;
+    const users = JSON.parse(await fs.readFile(usersFile, 'utf8'));
+    const user = users.find(u => u.username === username && u.password === password);
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Identifiants incorrects' });
+    }
+    next();
+  } catch (err) {
+    console.error('Erreur authentification:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 }
 
-// Route de connexion simplifiée
+// Routes
 app.post('/login', authenticate, (req, res) => {
   res.json({ message: 'Connexion réussie' });
 });
 
-// Récupérer tous les articles
 app.get('/articles', async (req, res) => {
   try {
     const data = await fs.readFile(articlesFile, 'utf8');
-    const articles = JSON.parse(data);
-    res.json(articles);
-  } catch (error) {
-    console.error('Erreur lecture articles:', error);
-    res.status(500).json({ error: 'Erreur lors de la lecture des articles' });
+    res.json(JSON.parse(data));
+  } catch (err) {
+    console.error('Erreur GET /articles:', err);
+    res.status(500).json({ 
+      error: 'Erreur de chargement des articles',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
-// Ajouter un nouvel article avec image (protégé par authentification basique)
 app.post('/articles', authenticate, upload.single('image'), async (req, res) => {
   try {
     const { title, summary, date, category } = req.body;
+    
     if (!title || !summary || !date || !category || !req.file) {
-      return res.status(400).json({ error: 'Tous les champs sont requis, y compris l\'image' });
+      return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
-    
-    const image = `/images/${req.file.filename}`;
-    const data = await fs.readFile(articlesFile, 'utf8');
-    const articles = JSON.parse(data);
-    articles.push({ title, summary, date, category, image });
-    
+
+    const articles = JSON.parse(await fs.readFile(articlesFile, 'utf8'));
+    const newArticle = {
+      title,
+      summary,
+      date,
+      category,
+      image: `/images/${req.file.filename}`
+    };
+
+    articles.push(newArticle);
     await fs.writeFile(articlesFile, JSON.stringify(articles, null, 2));
-    res.json({ message: 'Article ajouté' });
-  } catch (error) {
-    console.error('Erreur ajout article:', error);
-    res.status(500).json({ error: 'Erreur lors de l\'ajout de l\'article' });
+    
+    res.status(201).json(newArticle);
+  } catch (err) {
+    console.error('Erreur POST /articles:', err);
+    res.status(500).json({ 
+      error: "Erreur lors de l'ajout de l'article",
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
 // Démarrer le serveur
-app.listen(port, () => {
-  console.log(`Serveur démarré sur http://localhost:${port}`);
-  console.log('Répertoire courant:', process.cwd());
-});
+initFiles()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Serveur démarré sur http://localhost:${port}`);
+      console.log('Répertoire data:', dataDir);
+    });
+  })
+  .catch(err => {
+    console.error('Échec de l\'initialisation:', err);
+    process.exit(1);
+  });
