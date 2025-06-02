@@ -82,7 +82,7 @@ initDataDirectory().then(() => {
       │   └── articles.json
       ├── public/
       │   └── images/
-      └── server.js
+      └── serveur.js
     `);
   });
 });
